@@ -44,7 +44,7 @@ params = MPCParams(
 ### Instantiate `NMPC` and solve
 ```python
 from nmpc import NMPC
-mpc = NMPC(dynamics_fn=dynamics, params=params, solver_ops=...)
+mpc = NMPC(dynamics_fn=dynamics, params=params, solver_opts={...})
 current_state = jax.numpy.array([...])
 current_reference = jax.numpy.array([...])
 mpc_result = mpc.solve(x0=current_state, x_ref=current_reference)
