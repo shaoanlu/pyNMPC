@@ -12,7 +12,7 @@ def dynamics(x: jnp.ndarray, u: jnp.ndarray, dt: float) -> jnp.ndarray:
     """
       Unicycle dynamics model.
         x_next = x + u[0] * cos(theta) * dt
-        y_next = x + u[0] * sin(theta) * dt
+        y_next = y + u[0] * sin(theta) * dt
         theta_next = theta + u[1] * dt
     """
     theta = x[2]
