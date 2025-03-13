@@ -1,6 +1,15 @@
 # pyNMPC
 Nonlinear Model Predictive Control based on CVXPY and jax
 
+```math
+\begin{aligned}
+\min_{x_{0:N+1}, u_{0:N}} \quad & \sum_{k=0}^{N-1} \left( (x_k - x_k^{\text{ref}})^\top Q (x_k - x_k^{\text{ref}}) + u_k^\top R u_k \right) + (x_N - x_N^{\text{ref}})^\top Q_N (x_N - x_N^{\text{ref}}) \\
+\text{subject to} \quad & x_{k+1} = f(x_k, u_k, \Delta t), \quad k = 0, \dots, N-1 \\
+& x_0 = x(t) \\
+& u_k \in \mathcal{U}, \quad k = 0, \dots, N-1 \\
+\end{aligned}
+```
+
 ## Demo
 ### Unicycle trajectory tracking
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/shaoanlu/pyNMPC/blob/main/examples/demo.ipynb)
