@@ -228,9 +228,8 @@ class NMPC:
             constraints.append(x_var[k + 1] == A_params[k] @ x_var[k] + B_params[k] @ u_var[k] + c_params[k])
 
             # Input constraints
-            for i in range(n_controls):
-                constraints.append(u_var[k][i] <= params.u_max[i])
-                constraints.append(u_var[k][i] >= params.u_min[i])
+            constraints.append(u_var[k] <= params.u_max)
+            constraints.append(u_var[k] >= params.u_min)
 
         # Terminal cost
         cost += cp.quad_form(x_var[N] - x_ref_param, params.QN)
