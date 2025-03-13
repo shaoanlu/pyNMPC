@@ -9,7 +9,7 @@ Nonlinear Model Predictive Control based on CVXPY and jax
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/shaoanlu/pyNMPC/blob/main/demo_2dquadrotor_with_suspension.ipynb)
 
 ## Usage
-### 1. define a jittable dynamics function
+### 1. Define a jittable dynamics function
 The function should take input args `x`, `u`, and `dt` and return a new state vector.
 ```python
 def dynamics(x: jnp.ndarray, u: jnp.ndarray, dt: float) -> jnp.ndarray:
@@ -48,7 +48,7 @@ params = MPCParams(
 ### Instantiate `NMPC` and solve
 ```python
 from nmpc import NMPC
-mpc = NMPC(dynamics_fn=dynamics, params=params, solver_opts={...})
+mpc = NMPC(dynamics_fn=dynamics, params=params, solver_opts={...})  # pass dynamics and parameter
 current_state = jax.numpy.array([...])
 current_reference = jax.numpy.array([...])
 mpc_result = mpc.solve(x0=current_state, x_ref=current_reference)
