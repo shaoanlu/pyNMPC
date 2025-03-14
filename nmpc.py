@@ -223,6 +223,8 @@ class NMPC:
         u_var = [cp.Variable(n_controls) for _ in range(N)]
         if params.use_soft_constraint:
             slack_var = [cp.Variable(n_states, nonneg=True) for _ in range(N + 1)]
+        else:
+            slack_var = None
 
         # Parameters
         x0_param = cp.Parameter(n_states)
@@ -344,7 +346,7 @@ class NMPC:
         x_new = jnp.array([self.x_var[k].value for k in range(self.params.N + 1)])
         u_new = jnp.array([self.u_var[k].value for k in range(self.params.N)])
         s_new = None
-        if hasattr(self, "slack_var"):
+        if self.params.use_soft_constraint:
             s_new = jnp.array([self.s_var[k].value for k in range(self.params.N + 1)])
 
         return x_new, u_new, s_new, self.problem.value
