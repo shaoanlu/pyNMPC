@@ -33,18 +33,18 @@ class MPCParams:
         verbose (bool): Whether to print verbose output during optimization.
     """
 
-    dt: float = 0.1
-    N: int = 20
-    n_states: int = 3
-    n_controls: int = 2
-    Q: jnp.ndarray = field(default_factory=lambda: jnp.diag(jnp.array([10.0, 10.0, 1.0])))
-    QN: jnp.ndarray = field(default_factory=lambda: jnp.diag(jnp.array([10.0, 10.0, 1.0])))
-    R: jnp.ndarray = field(default_factory=lambda: jnp.diag(jnp.array([1.0, 0.1])))
-    x_ref: jnp.ndarray = field(default_factory=lambda: jnp.array([5.0, 5.0, 0.0]))
-    x_min: jnp.ndarray | None = field(default_factory=lambda: jnp.array([-float("inf"), -float("inf"), -float("inf")]))
-    x_max: jnp.ndarray | None = field(default_factory=lambda: jnp.array([float("inf"), float("inf"), float("inf")]))
-    u_min: jnp.ndarray | None = field(default_factory=lambda: jnp.array([0.0, -1.0]))
-    u_max: jnp.ndarray | None = field(default_factory=lambda: jnp.array([1.0, 1.0]))
+    dt: float
+    N: int
+    n_states: int
+    n_controls: int
+    Q: jnp.ndarray
+    QN: jnp.ndarray
+    R: jnp.ndarray
+    x_ref: jnp.ndarray
+    x_min: jnp.ndarray | None = None
+    x_max: jnp.ndarray | None = None
+    u_min: jnp.ndarray | None = None
+    u_max: jnp.ndarray | None = None
     slack_weight: float = 1e4
     use_soft_constraint: bool = True
     max_sqp_iter: int = 5
@@ -111,7 +111,7 @@ class NMPC:
         params_dict: Dict[str, Any] | None = None,
         solver_opts: Dict[str, Any] | None = None,
     ):
-        self.dynamics = jax.jit(dynamics_fn)
+        self.dynamics = jax.jit(dynamics_fn, static_argnums=(2,))
         self.params = params
         self.params_dict = params_dict if params_dict else {}
         self.n_states = params.n_states
@@ -240,8 +240,10 @@ class NMPC:
 
             # State constraints
             if params.use_soft_constraint:
-                constraints.append(x_var[k] >= params.x_min - slack_var[k])
-                constraints.append(x_var[k] <= params.x_max + slack_var[k])
+                if params.x_min is not None:
+                    constraints.append(x_var[k] >= params.x_min - slack_var[k])
+                if params.x_max is not None:
+                    constraints.append(x_var[k] <= params.x_max + slack_var[k])
                 cost += params.slack_weight * cp.sum_squares(slack_var[k])
             else:
                 if params.x_min is not None:
