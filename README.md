@@ -36,7 +36,7 @@ def dynamics(x: jnp.ndarray, u: jnp.ndarray, dt: float) -> jnp.ndarray:
     return x + jnp.array([u[0] * jnp.cos(theta), u[0] * jnp.sin(theta), u[1]]) * dt
 ```
 
-### Set `MPCParams` values
+### 2. Set `MPCParams` values
 ```python
 import jax.numpy as jnp
 from nmpc import MPCParams
@@ -61,7 +61,7 @@ params = MPCParams(
 )
 ```
 
-### Instantiate `NMPC` and solve
+### 3. Instantiate `NMPC` and solve
 ```python
 import jax.numpy as jnp
 from nmpc import NMPC
