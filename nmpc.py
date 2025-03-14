@@ -22,11 +22,13 @@ class MPCParams:
         Q (jnp.ndarray): State cost matrix of shape (n_states, n_states).
         QN (jnp.ndarray): Terminal state cost matrix of shape (n_states, n_states).
         R (jnp.ndarray): Control cost matrix of shape (n_controls, n_controls).
+        R_delta (jnp.ndarray): Change of ontrol cost matrix of shape (n_controls, n_controls).
         x_ref (jnp.ndarray): Reference/target state of shape (n_states,).
         x_min (jnp.ndarray): Lower bounds for state of shape (n_states,).
         x_max (jnp.ndarray): Upper bounds for state of shape (n_states,).
         u_min (jnp.ndarray): Lower bounds for control input of shape (n_controls,).
         u_max (jnp.ndarray): Upper bounds for control input of shape (n_controls,).
+        u_prev (jnp.ndarray): Previous control input of shape (n_controls,). Use for calculating control change cost.
         slack_weight (float): slack penalty for soft state constraints.
         max_sqp_iter (int): Maximum number of SQP iterations.
         sqp_tol (float): Tolerance for SQP convergence.
@@ -37,19 +39,24 @@ class MPCParams:
     N: int
     n_states: int
     n_controls: int
+    x_ref: jnp.ndarray
     Q: jnp.ndarray
     QN: jnp.ndarray
     R: jnp.ndarray
-    x_ref: jnp.ndarray
+    R_delta: jnp.ndarray | None = None
     x_min: jnp.ndarray | None = None
     x_max: jnp.ndarray | None = None
     u_min: jnp.ndarray | None = None
     u_max: jnp.ndarray | None = None
+    u_prev: jnp.ndarray | None = None
     slack_weight: float = 1e4
     use_soft_constraint: bool = True
     max_sqp_iter: int = 5
     sqp_tol: float = 1e-4
     verbose: bool = False
+
+    def __post_init__(self):
+        self.u_prev = jnp.zeros(self.n_controls)
 
 
 @dataclass(frozen=True)
@@ -113,7 +120,6 @@ class NMPC:
     ):
         self.dynamics = jax.jit(dynamics_fn, static_argnums=(2,))
         self.params = params
-        self.params_dict = params_dict if params_dict else {}
         self.n_states = params.n_states
         self.n_controls = params.n_controls
 
@@ -221,6 +227,7 @@ class NMPC:
         # Parameters
         x0_param = cp.Parameter(n_states)
         x_ref_param = cp.Parameter(n_states)
+        u_prev_param = cp.Parameter(n_controls)
         A_params = [cp.Parameter((n_states, n_states)) for _ in range(N)]
         B_params = [cp.Parameter((n_states, n_controls)) for _ in range(N)]
         c_params = [cp.Parameter(n_states) for _ in range(N)]
@@ -234,6 +241,11 @@ class NMPC:
             # Stage cost
             error_k = x_var[k] - x_ref_param
             cost += cp.quad_form(error_k, params.Q) + cp.quad_form(u_var[k], params.R)
+
+            # Control change cost
+            if params.R_delta is not None:
+                delta_u = u_var[k] - u_var[k - 1] if k > 0 else u_var[k] - u_prev_param
+                cost += cp.quad_form(delta_u, params.R_delta)
 
             # Dynamics constraint
             constraints.append(x_var[k + 1] == A_params[k] @ x_var[k] + B_params[k] @ u_var[k] + c_params[k])
@@ -270,6 +282,7 @@ class NMPC:
             "B_list": B_params,
             "c_list": c_params,
             "x_ref": x_ref_param,
+            "u_prev": u_prev_param,
         }
 
         return problem, x_var, u_var, slack_var, parameter_dict
@@ -311,6 +324,10 @@ class NMPC:
         # Update parameters
         self.parameter_dict["x0"].value = x0_np
         self.parameter_dict["x_ref"].value = np.array(self.params.x_ref)
+        if self.params.u_prev is not None:
+            self.parameter_dict["u_prev"].value = np.array(self.params.u_prev)
+        else:
+            self.parameter_dict["u_prev"].value = np.zeros(self.n_controls)
         for k in range(self.params.N):
             self.parameter_dict["A_list"][k].value = A_list_np[k]
             self.parameter_dict["B_list"][k].value = B_list_np[k]
@@ -333,7 +350,11 @@ class NMPC:
         return x_new, u_new, s_new, self.problem.value
 
     def solve(
-        self, x0: jnp.ndarray, x_ref: jnp.ndarray | None = None, mpc_result: MPCResult | None = None
+        self,
+        x0: jnp.ndarray,
+        x_ref: jnp.ndarray | None = None,
+        mpc_result: MPCResult | None = None,
+        u_prev: jnp.ndarray | None = None,
     ) -> MPCResult:
         """Solve the NMPC problem using Sequential Quadratic Programming.
 
@@ -360,6 +381,9 @@ class NMPC:
 
         if x_ref is not None:
             self.params.x_ref = x_ref
+
+        if u_prev is not None:
+            self.params.u_prev = u_prev
 
         # Initialize trajectories
         if mpc_result is None:
@@ -397,6 +421,7 @@ class NMPC:
 
             # Update trajectories
             x_traj, u_traj, slack, prev_cost = x_new, u_new, s_new, cost
+            self.params.u_prev = u_traj[0]
 
         return MPCResult(
             x_traj=x_traj,
