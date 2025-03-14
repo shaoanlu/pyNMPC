@@ -14,10 +14,10 @@ Nonlinear Model Predictive Control based on CVXPY and jax
 
 ## Demo
 ### Unicycle trajectory tracking
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/shaoanlu/pyNMPC/blob/main/examples/unicycle.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/shaoanlu/pyNMPC/blob/main/examples/mpc_unicycle.ipynb)
 
 ### Quadrotor suspension point-to-point control
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/shaoanlu/pyNMPC/blob/main/examples/quadrotor_suspension.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/shaoanlu/pyNMPC/blob/main/examples/mpc_quadrotor_suspension.ipynb)
 
 ## Usage
 ### 1. Define a jittable dynamics function
