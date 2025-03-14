@@ -48,7 +48,7 @@ class MPCParams:
     x_max: jnp.ndarray | None = None
     u_min: jnp.ndarray | None = None
     u_max: jnp.ndarray | None = None
-    u_prev: jnp.ndarray | None = None
+    u_prev: jnp.ndarray = field(init=False)
     slack_weight: float = 1e4
     use_soft_constraint: bool = True
     max_sqp_iter: int = 5
