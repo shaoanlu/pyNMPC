@@ -3,10 +3,12 @@ Nonlinear Model Predictive Control based on CVXPY and jax
 
 ```math
 \begin{aligned}
-\min_{x_{0:N+1}, u_{0:N}} \quad & \sum_{k=0}^{N-1} \left( \|x_k - x_k^{\text{ref}}\|_Q^2 + \|u_k\|_R^2 \right) + \|x_N - x_N^{\text{ref}}\|_{Q_N}^2 \\
-\text{subject to} \quad & x_{k+1} = f(x_k, u_k, \Delta t), \quad k = 0, \dots, N-1 \\
-& x_0 = x(t) \\
-& u_k \in \mathcal{U}, \quad k = 0, \dots, N-1 \\
+\min_{\mathbf{x}, \mathbf{u}, \mathbf{s}} \quad & \sum_{k=0}^{N-1} \left( \|\mathbf{x}_k - \mathbf{x}_k^{\text{ref}}\|_Q^2 + \|\mathbf{u}_k\|_R^2 + \rho\|\mathbf{s}_k\|^2\right) + \|\mathbf{x}_N - \mathbf{x}_N^{\text{ref}}\|_{Q_N}^2 \\
+\text{subject to} \quad & \mathbf{x}_{k+1} = f(x_k, u_k, \Delta t), \quad k = 0, \dots, N-1 \\
+& \mathbf{x}_0 = \mathbf{x}_{\text{init}} \\
+& \mathbf{x}_{\text{min}}-\mathbf{s}_k \le \mathbf{x}_k \le \mathbf{x}_{\text{max}}+\mathbf{s}_k, \quad k = 0, \dots, N \\
+& \mathbf{u}_{\text{min}} \le \mathbf{u}_k \le \mathbf{u}_{\text{max}}, \quad k = 0, \dots, N-1 \\
+& \mathbf{s}_k \ge 0, \quad k = 0, \dots, N
 \end{aligned}
 ```
 

@@ -23,8 +23,11 @@ class MPCParams:
         QN (jnp.ndarray): Terminal state cost matrix of shape (n_states, n_states).
         R (jnp.ndarray): Control cost matrix of shape (n_controls, n_controls).
         x_ref (jnp.ndarray): Reference/target state of shape (n_states,).
+        x_min (jnp.ndarray): Lower bounds for state of shape (n_states,).
+        x_max (jnp.ndarray): Upper bounds for state of shape (n_states,).
         u_min (jnp.ndarray): Lower bounds for control input of shape (n_controls,).
         u_max (jnp.ndarray): Upper bounds for control input of shape (n_controls,).
+        slack_weight (float): slack penalty for soft state constraints.
         max_sqp_iter (int): Maximum number of SQP iterations.
         sqp_tol (float): Tolerance for SQP convergence.
         verbose (bool): Whether to print verbose output during optimization.
@@ -38,8 +41,12 @@ class MPCParams:
     QN: jnp.ndarray = field(default_factory=lambda: jnp.diag(jnp.array([10.0, 10.0, 1.0])))
     R: jnp.ndarray = field(default_factory=lambda: jnp.diag(jnp.array([1.0, 0.1])))
     x_ref: jnp.ndarray = field(default_factory=lambda: jnp.array([5.0, 5.0, 0.0]))
-    u_min: jnp.ndarray = field(default_factory=lambda: jnp.array([0.0, -1.0]))
-    u_max: jnp.ndarray = field(default_factory=lambda: jnp.array([1.0, 1.0]))
+    x_min: jnp.ndarray | None = field(default_factory=lambda: jnp.array([-float("inf"), -float("inf"), -float("inf")]))
+    x_max: jnp.ndarray | None = field(default_factory=lambda: jnp.array([float("inf"), float("inf"), float("inf")]))
+    u_min: jnp.ndarray | None = field(default_factory=lambda: jnp.array([0.0, -1.0]))
+    u_max: jnp.ndarray | None = field(default_factory=lambda: jnp.array([1.0, 1.0]))
+    slack_weight: float = 1e4
+    use_soft_constraint: bool = True
     max_sqp_iter: int = 5
     sqp_tol: float = 1e-4
     verbose: bool = False
@@ -63,6 +70,7 @@ class MPCResult:
 
     x_traj: jnp.ndarray
     u_traj: jnp.ndarray
+    slack: jnp.ndarray | None
     sqp_iters: int
     solve_time: float
     converged: bool
@@ -122,7 +130,7 @@ class NMPC:
         else:
             self.solver_opts = solver_opts
 
-        self.problem, self.x_var, self.u_var, self.parameter_dict = self._create_parameterized_qp(params)
+        self.problem, self.x_var, self.u_var, self.s_var, self.parameter_dict = self._create_parameterized_qp(params)
 
     @partial(jax.jit, static_argnums=(0,))
     def _stage_cost(self, x: jnp.ndarray, u: jnp.ndarray, x_ref: jnp.ndarray) -> float:
@@ -207,6 +215,9 @@ class NMPC:
         # Decision variables
         x_var = [cp.Variable(n_states) for _ in range(N + 1)]
         u_var = [cp.Variable(n_controls) for _ in range(N)]
+        if params.use_soft_constraint:
+            slack_var = [cp.Variable(n_states, nonneg=True) for _ in range(N + 1)]
+
         # Parameters
         x0_param = cp.Parameter(n_states)
         x_ref_param = cp.Parameter(n_states)
@@ -227,9 +238,22 @@ class NMPC:
             # Dynamics constraint
             constraints.append(x_var[k + 1] == A_params[k] @ x_var[k] + B_params[k] @ u_var[k] + c_params[k])
 
+            # State constraints
+            if params.use_soft_constraint:
+                constraints.append(x_var[k] >= params.x_min - slack_var[k])
+                constraints.append(x_var[k] <= params.x_max + slack_var[k])
+                cost += params.slack_weight * cp.sum_squares(slack_var[k])
+            else:
+                if params.x_min is not None:
+                    constraints.append(x_var[k] >= params.x_min)
+                if params.x_max is not None:
+                    constraints.append(x_var[k] <= params.x_max)
+
             # Input constraints
-            constraints.append(u_var[k] <= params.u_max)
-            constraints.append(u_var[k] >= params.u_min)
+            if params.u_max is not None:
+                constraints.append(u_var[k] <= params.u_max)
+            if params.u_min is not None:
+                constraints.append(u_var[k] >= params.u_min)
 
         # Terminal cost
         cost += cp.quad_form(x_var[N] - x_ref_param, params.QN)
@@ -246,7 +270,7 @@ class NMPC:
             "x_ref": x_ref_param,
         }
 
-        return problem, x_var, u_var, parameter_dict
+        return problem, x_var, u_var, slack_var, parameter_dict
 
     def _solve_qp_subproblem(
         self,
@@ -300,8 +324,11 @@ class NMPC:
         # Extract solution
         x_new = jnp.array([self.x_var[k].value for k in range(self.params.N + 1)])
         u_new = jnp.array([self.u_var[k].value for k in range(self.params.N)])
+        s_new = None
+        if hasattr(self, "slack_var"):
+            s_new = jnp.array([self.s_var[k].value for k in range(self.params.N + 1)])
 
-        return x_new, u_new, self.problem.value
+        return x_new, u_new, s_new, self.problem.value
 
     def solve(
         self, x0: jnp.ndarray, x_ref: jnp.ndarray | None = None, mpc_result: MPCResult | None = None
@@ -354,7 +381,7 @@ class NMPC:
             A_list, B_list, c_list = self._linearize_trajectory(x_traj, u_traj, self.params.dt)
 
             # Solve QP subproblem
-            x_new, u_new, cost = self._solve_qp_subproblem(x0, x_traj, u_traj, A_list, B_list, c_list)
+            x_new, u_new, s_new, cost = self._solve_qp_subproblem(x0, x_traj, u_traj, A_list, B_list, c_list)
 
             # Check convergence
             if prev_cost == float("inf"):
@@ -367,11 +394,12 @@ class NMPC:
                 break
 
             # Update trajectories
-            x_traj, u_traj, prev_cost = x_new, u_new, cost
+            x_traj, u_traj, slack, prev_cost = x_new, u_new, s_new, cost
 
         return MPCResult(
             x_traj=x_traj,
             u_traj=u_traj,
+            slack=slack,
             sqp_iters=sqp_iter + 1,
             solve_time=time.time() - start_time,
             converged=converged,
