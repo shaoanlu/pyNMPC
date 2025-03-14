@@ -411,6 +411,10 @@ class NMPC:
             # Solve QP subproblem
             x_new, u_new, s_new, cost = self._solve_qp_subproblem(x0, x_traj, u_traj, A_list, B_list, c_list)
 
+            # Update trajectories
+            x_traj, u_traj, slack = x_new, u_new, s_new
+            self.params.u_prev = u_traj[0]
+
             # Check convergence
             if prev_cost == float("inf"):
                 prev_cost = cost
@@ -420,10 +424,7 @@ class NMPC:
                 if self.params.verbose:
                     print(f"SQP converged after {sqp_iter + 1} iterations")
                 break
-
-            # Update trajectories
-            x_traj, u_traj, slack, prev_cost = x_new, u_new, s_new, cost
-            self.params.u_prev = u_traj[0]
+            prev_cost = cost
 
         return MPCResult(
             x_traj=x_traj,
