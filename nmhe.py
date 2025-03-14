@@ -83,7 +83,7 @@ class NMHE:
         dyn_fixed_dt = lambda x, u: self.dynamics(x, u, dt)
         A = jax.jacfwd(lambda x: dyn_fixed_dt(x, u_nom))(x_nom)
         B = jax.jacfwd(lambda u: dyn_fixed_dt(x_nom, u))(u_nom)
-        c = dyn_fixed_dt(x_nom, u_nom) - A @ x_nom
+        c = dyn_fixed_dt(x_nom, u_nom) - A @ x_nom - B @ u_nom  # residual
         return A, B, c
 
     @partial(jax.jit, static_argnums=(0,))
@@ -248,7 +248,7 @@ class NMHE:
             prev_cost = cost
 
         return MHEResult(
-            x_est=x_est[:-1],  # since x has shape (N+1, n_states), we drop the last prediciton
+            x_est=x_est,
             w_est=w_est,
             v_est=v_est,
             p_est=p_est,
