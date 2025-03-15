@@ -39,7 +39,7 @@ def dynamics(x: jnp.ndarray, u: jnp.ndarray, dt: float) -> jnp.ndarray:
 ### 2. Set `MPCParams` values
 ```python
 import jax.numpy as jnp
-from nmpc import MPCParams
+from pyNMPC.nmpc import MPCParams
 
 params = MPCParams(
     dt=0.1,                                    # Time step
@@ -64,7 +64,7 @@ params = MPCParams(
 ### 3. Instantiate `NMPC` and solve
 ```python
 import jax.numpy as jnp
-from nmpc import NMPC
+from pyNMPC.nmpc import NMPC
 
 mpc = NMPC(dynamics_fn=dynamics, params=params, solver_opts={...})  # pass dynamics and parameter
 current_state = jnp.array([...])
