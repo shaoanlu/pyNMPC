@@ -39,14 +39,8 @@ class EKFParams:
                 f"got {self.process_noise_cov.shape}"
             )
 
-        # Check initial covariance
-        if self.initial_cov.shape != (state_dim, state_dim):
-            raise ValueError(
-                f"Initial covariance matrix should be {state_dim}x{state_dim}, " f"got {self.initial_cov.shape}"
-            )
 
-
-class ExtendedKalmanFilter:
+class EKF:
     """Extended Kalman Filter  for nonlinear state estimation.
 
     This class implements the Extended Kalman Filter, which extends the linear Kalman Filter
