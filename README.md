@@ -13,11 +13,14 @@ Nonlinear Model Predictive Control based on CVXPY and jax
 ```
 
 ## Demo
-### Unicycle trajectory tracking
+1. Unicycle trajectory tracking with NMPC
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/shaoanlu/pyNMPC/blob/main/examples/mpc_unicycle.ipynb)
 
-### Quadrotor suspension point-to-point control
+2. Quadrotor suspension point-to-point control with NMPC
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/shaoanlu/pyNMPC/blob/main/examples/mpc_quadrotor_suspension.ipynb)
+
+3. Payload estimation with NMHE and EKF
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/shaoanlu/pyNMPC/blob/main/examples/mhe_ekf_payload_estimation.ipynb)
 
 ## Installation
 1. Clone the repository:
