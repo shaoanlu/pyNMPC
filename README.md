@@ -19,6 +19,17 @@ Nonlinear Model Predictive Control based on CVXPY and jax
 ### Quadrotor suspension point-to-point control
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/shaoanlu/pyNMPC/blob/main/examples/mpc_quadrotor_suspension.ipynb)
 
+## Installation
+1. Clone the repository:
+```bash
+git clone https://github.com/shaoanlu/pyNMPC.git
+```
+2. Pip install in editable mode:
+```bash
+pip install -e .
+```
+This also installs the core dependencies (cvxpy, jax, numpy). 
+
 ## Usage
 ### 1. Define a jittable dynamics function
 The function should take input args `x`, `u`, and `dt` and return a new state vector.
