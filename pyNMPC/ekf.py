@@ -1,7 +1,8 @@
-from typing import Callable
-import numpy as np
-import jax
 from dataclasses import dataclass
+from typing import Callable
+
+import jax
+import numpy as np
 
 
 @dataclass(kw_only=True)
@@ -163,7 +164,7 @@ class EKF:
             meas_dim = len(y_pred)
             if self.R.shape != (meas_dim, meas_dim):
                 raise ValueError(
-                    f"Measurement noise covariance matrix should be {meas_dim}x{meas_dim}, " f"got {self.R.shape}"
+                    f"Measurement noise covariance matrix should be {meas_dim}x{meas_dim}, got {self.R.shape}"
                 )
             if len(z) != meas_dim:
                 raise ValueError(f"Measurement vector should have length {meas_dim}, got {len(z)}")

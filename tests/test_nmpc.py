@@ -1,12 +1,12 @@
 import unittest
-import numpy as np
+
 import jax.numpy as jnp
+import numpy as np
 
 from pyNMPC.nmpc import NMPC, MPCParams, MPCResult
 
 
 class TestMPCParams(unittest.TestCase):
-
     def setUp(self):
         self.params = MPCParams(
             dt=0.1,

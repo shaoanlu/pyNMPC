@@ -1,11 +1,12 @@
+import time
+from dataclasses import dataclass
+from functools import partial
+from typing import Any, Callable, Dict, Tuple
+
+import cvxpy as cp
 import jax
 import jax.numpy as jnp
 import numpy as np
-import cvxpy as cp
-import time
-from functools import partial
-from typing import Tuple, Callable, Any, Dict
-from dataclasses import dataclass
 
 
 @dataclass(kw_only=True)
@@ -48,6 +49,25 @@ class MHEResult:
 
 
 class NMHE:
+    """
+    Nonlinear Moving Horizon Estimation (NMHE) solver using Sequential Quadratic Programming (SQP).
+
+
+    References:
+    https://ftp.esat.kuleuven.be/pub/stadius/ida/reports/11-25.pdf
+    https://www.do-mpc.com/en/latest/theory_mhe.html
+
+    Cost function:
+    Given process noise w and measurement noise v
+
+    quad(x_mea[0] - x_var[0]) + quad(p_mea-p_var) + SUM(quad(w[k]) + quad(v[k]))
+    s.t.
+        x[k+1] = A[k] x[k] + B[k] u[k] + c[k] + w[k]
+        y[k] = H[k] x[k] + h[k] + v[k]
+        x_min <= x_var <= x_max
+        u_min <= u_var <= u_max
+    """
+
     def __init__(
         self,
         dynamics_fn: Callable,
@@ -80,7 +100,7 @@ class NMHE:
 
     @partial(jax.jit, static_argnums=(0, 3))
     def _linearize_dynamics(self, x_nom, u_nom, dt):
-        dyn_fixed_dt = lambda x, u: self.dynamics(x, u, dt)
+        dyn_fixed_dt = lambda x, u: self.dynamics(x, u, dt)  # noqa: E731
         A = jax.jacfwd(lambda x: dyn_fixed_dt(x, u_nom))(x_nom)
         B = jax.jacfwd(lambda u: dyn_fixed_dt(x_nom, u))(u_nom)
         c = dyn_fixed_dt(x_nom, u_nom) - A @ x_nom - B @ u_nom  # residual
@@ -115,22 +135,6 @@ class NMHE:
         H_params = [cp.Parameter((n_outputs, n_states)) for _ in range(N)]
         h_params = [cp.Parameter(n_outputs) for _ in range(N)]
         est_p0_param = cp.Parameter(n_est_params) if p_var else None
-
-        # NOTE
-        """
-        Ref:
-        https://ftp.esat.kuleuven.be/pub/stadius/ida/reports/11-25.pdf
-        https://www.do-mpc.com/en/latest/theory_mhe.html
-        
-        given process noise w and measurement noise v
-
-        quad(x_mea[0] - x_var[0]) + quad(p_mea-p_var) + SUM(quad(w[k]) + quad(v[k]))
-        s.t.
-            x[k+1] = A[k] x[k] + B[k] u[k] + c[k] + w[k]
-            y[k] = H[k] x[k] + h[k] + v[k]
-            x_min <= x_var <= x_max
-            u_min <= u_var <= u_max
-        """
 
         # Initialize constraints and cost
         constraints = []

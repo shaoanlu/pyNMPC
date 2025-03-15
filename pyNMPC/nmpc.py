@@ -1,11 +1,12 @@
+import time
+from dataclasses import dataclass, field
+from functools import partial
+from typing import Any, Callable, Dict, List, Tuple
+
+import cvxpy as cp
 import jax
 import jax.numpy as jnp
 import numpy as np
-import cvxpy as cp
-import time
-from functools import partial
-from typing import Tuple, List, Callable, Any, Dict
-from dataclasses import dataclass, field
 
 
 @dataclass(kw_only=True)
@@ -172,7 +173,7 @@ class NMPC:
                 - B: Control Jacobian matrix of shape (n_states, n_controls).
                 - c: Affine term of shape (n_states,) for the linearized dynamics.
         """
-        dyn_fixed_dt = lambda x, u: self.dynamics(x, u, dt)
+        dyn_fixed_dt = lambda x, u: self.dynamics(x, u, dt)  # noqa: E731
 
         A = jax.jacfwd(lambda x: dyn_fixed_dt(x, u_nom))(x_nom)
         B = jax.jacfwd(lambda u: dyn_fixed_dt(x_nom, u))(u_nom)
