@@ -2,8 +2,7 @@ import unittest
 import numpy as np
 import jax.numpy as jnp
 
-# Import the classes being tested - assuming the original code is in a file called nmpc.py
-from nmpc import NMPC, MPCParams, MPCResult
+from pyNMPC.nmpc import NMPC, MPCParams, MPCResult
 
 
 class TestMPCParams(unittest.TestCase):
