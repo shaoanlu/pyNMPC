@@ -64,7 +64,7 @@ class NMHE:
 
         if solver_opts is None:
             self.solver_opts = {
-                "solver": cp.OSQP,
+                "solver": cp.PIQP,
                 "eps_abs": 1e-3,
                 "eps_rel": 1e-3,
                 "max_iter": 1000,

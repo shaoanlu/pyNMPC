@@ -79,5 +79,8 @@ mpc_result.x_traj
 
 ## Requirements
 - Python 3.10+
-- `cvxpy[osqp]`
+- `cvxpy[osqp, proxqp, piqp]`
 - `jax`
+
+## Troubleshooting
+- QP failed: Try different QP solvers in `solver_opts`. `PROXQP` and `PIQP` are usually more stable choices.
