@@ -29,7 +29,8 @@ git clone https://github.com/shaoanlu/pyNMPC.git
 ```
 2. Pip install in editable mode:
 ```bash
-pip install -e .
+cd pyNMPC
+pip install -e .  # optional as long as the workspace is in the same directory
 ```
 This also installs the core dependencies (cvxpy, jax, numpy). 
 
