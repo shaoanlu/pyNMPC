@@ -2,6 +2,27 @@
 requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "pyNMPC"
+version = "0.0.1"
+description = "Nonlinear Model Predictive Control based on CVXPY and JAX."
+authors = [{ name = "Shao-An Lu", email = "abc@email.com" }]
+readme = "README.md"
+license = { text = "Apache License 2.0" }
+requires-python = ">=3.10"
+keywords = ["optimization", "automatic differentiation", "jax"]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "License :: OSI Approved :: Apache License 2.0",
+    "Programming Language :: Python :: 3",
+]
+dependencies = ["jax>=0.4.0", "jaxlib>=0.4.0", "cvxpy"]
+optional-dependencies = { "dev" = ["pre-commit"] }
+
+[project.urls]
+"Homepage" = "https://github.com/shaoanlu/pyNMPC"
+
 [tool.ruff]
 line-length = 119
 
