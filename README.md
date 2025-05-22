@@ -98,4 +98,4 @@ mpc_result.x_traj
 - `jax`
 
 ## Troubleshooting
-- QP failed: Try different QP solvers in `solver_opts`. `PROXQP` and `PIQP` are usually more stable choices.
+- QP failed: Try different QP solvers in `solver_opts`. `PROXQP`, `PIQP`, and the new `QOCO` are usually more stable choices.
